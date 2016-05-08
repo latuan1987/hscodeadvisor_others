@@ -27,17 +27,6 @@ func main() {
 	checkErr(err)
 	defer db.Close()
 
-	//	fmt.Println("# Inserting 100 values")
-	//	stmtInsert, err := db.Prepare("INSERT INTO hscode(hscode,productname,productdesc) VALUES($1,$2,$3)")
-	//	for i := 0; i < 100; i++ {
-	//		hscodestr := fmt.Sprintf("hs-%6d", i)
-	//		res, err := stmtInsert.Exec(hscodestr, "product name", "product description")
-	//		checkErr(err)
-	//		affect, err := res.RowsAffected()
-	//		checkErr(err)
-	//		fmt.Println(affect, "rows changed")
-	//	}
-
 	fmt.Println("# Querying")
 	rows, err := db.Query("SELECT * FROM hscode WHERE id=100")
 	checkErr(err)
@@ -58,8 +47,6 @@ func main() {
 
 		res, _ := json.Marshal(resHs)
 		fmt.Println(string(res))
-		//		fmt.Println("id | hscode | productname | productdesc ")
-		//		fmt.Printf("%3v | %8v | %6v | %6v\n", id, hscode, productname, productdesc)
 	}
 }
 
