@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"path/filepath"
 )
 
 type Data struct {
@@ -34,12 +35,25 @@ func (d TechnicalDetail) String() string {
 	return fmt.Sprintf("Screen Size: %s\r\nCertification: %s\r\n", d.ScreenSize, d.Certification)
 }
 
-func main() {
-	xmlFile, err := os.Open("C:/Go/GOWorkspace/src/hscodeweb/export_img/data/xml/alibaba/Items_20_04_2016.xml")
+func ExportImg(filePath string) bool {
+	xmlFile, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err.Error())
+		return false
 	}
 	defer xmlFile.Close()
+	
+	// Get file name of XML File
+	fileName := xmlFile.Name()
+	
+	// Create folder for exporting image
+	folderName := strings.TrimSuffix(fileName, ".xml") + string(filepath.Separator)
+	err2 := os.MkdirAll(folderName,0777)
+	if err2 != nil {
+		fmt.Println("err2")
+		fmt.Println(err2.Error())
+		return false
+	}
 
 	b, _ := ioutil.ReadAll(xmlFile)
 	var d Data
@@ -49,23 +63,52 @@ func main() {
 		response, err := http.Get(item.ImageURL)
 		if err != nil {
 			fmt.Println(err.Error())
+			return false
 		}
 		defer response.Body.Close()
 
 		//open a file for writing
-		fileNameTrim := strings.TrimPrefix(item.ImageURL, "https://")
-		fileNameReplace := strings.Replace(fileNameTrim, "/", "_", -1)
-		fileName := fmt.Sprintf("C:/Go/GOWorkspace/src/hscodeweb/export_img/data/export_img/%s", fileNameReplace)
+		imgNameTrim := strings.TrimPrefix(item.ImageURL, "https://")
+		imgNameReplace := strings.Replace(imgNameTrim, "/", "_", -1)
+		imgName := folderName + imgNameReplace
 
-		file, err := os.Create(fileName)
+		file, err := os.Create(imgName)
 		if err != nil {
 			fmt.Println(err.Error())
+			return false
 		}
 		// Use io.Copy to just dump the response body to the file. This supports huge files
 		_, err = io.Copy(file, response.Body)
 		if err != nil {
 			fmt.Println(err.Error())
+			return false
 		}
 		file.Close()
 	}
+	
+	return true
+}
+
+func FindAllFiles(searchDir string) []string {
+    fileList := []string{}
+    err := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+		if strings.Compare(filepath.Ext(path), ".xml") == 0 {
+			fileList = append(fileList, path)
+		}
+        return nil
+    })
+	
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	
+	return fileList
+}
+
+func main() {
+	listFiles := FindAllFiles("./data/xml/alibaba")
+    for _, file := range listFiles {
+		// Goroutines
+        ExportImg(file)
+    }
 }
